@@ -1,6 +1,9 @@
 package model
 
-import "time"
+import (
+	"strings"
+	"time"
+)
 
 type Receipt struct {
 	ID, FileName, Hash, Currency, Status string
@@ -11,6 +14,7 @@ type Receipt struct {
 type ValidationBatch struct {
 	ID                    string
 	ReceiptIDs            []string
+	Receipts              []Receipt
 	Total, Passed, Failed int
 	CreatedAt             time.Time
 }
@@ -36,11 +40,33 @@ func NewBatch(id string) ValidationBatch { return ValidationBatch{ID: id, Create
 func (b *ValidationBatch) Add(r Receipt) {
 	b.Total++
 	b.ReceiptIDs = append(b.ReceiptIDs, r.ID)
+	b.Receipts = append(b.Receipts, r)
 	if r.IsValid() {
 		b.Passed++
 	} else {
 		b.Failed++
 	}
+}
+
+// ErrorLines formats each failed receipt as "id: error" entries, prefixed
+// with the file name so individual failures stay identifiable in a batch.
+func ErrorLines(rs []Receipt) []string {
+	out := make([]string, 0, len(rs))
+	for _, r := range rs {
+		if r.IsValid() {
+			continue
+		}
+		name := r.ID
+		if r.FileName != "" {
+			name = r.FileName
+		}
+		msg := strings.Join(r.Errors, ", ")
+		if msg == "" {
+			msg = "validation failed"
+		}
+		out = append(out, name+": "+msg)
+	}
+	return out
 }
 func NewRule(id, name, pattern, severity string, enabled bool) ValidationRule {
 	return ValidationRule{ID: id, Name: name, Pattern: pattern, Severity: severity, Enabled: enabled}

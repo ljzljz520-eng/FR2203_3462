@@ -23,7 +23,8 @@ func FromReceipt(r model.Receipt) Summary {
 	return s
 }
 func FromBatch(b model.ValidationBatch) Summary {
-	return Summary{Total: b.Total, Passed: b.Passed, Failed: b.Failed}
+	s := Summary{Total: b.Total, Passed: b.Passed, Failed: b.Failed, Errors: model.ErrorLines(b.Receipts)}
+	return s
 }
 func Merge(a, b Summary) Summary {
 	a.Total += b.Total
@@ -33,7 +34,18 @@ func Merge(a, b Summary) Summary {
 	return a
 }
 func Text(s Summary) string {
-	return fmt.Sprintf("total=%d passed=%d failed=%d errors=%s", s.Total, s.Passed, s.Failed, strings.Join(s.Errors, "|"))
+	head := fmt.Sprintf("total=%d passed=%d failed=%d", s.Total, s.Passed, s.Failed)
+	if s.Failed == 0 {
+		return head
+	}
+	var b strings.Builder
+	b.WriteString(head)
+	b.WriteString("\nfailures:")
+	for _, e := range s.Errors {
+		b.WriteString("\n  - ")
+		b.WriteString(e)
+	}
+	return b.String()
 }
 func JSON(s Summary) string  { b, _ := json.Marshal(s); return string(b) }
 func Success(s Summary) bool { return s.Failed == 0 }
