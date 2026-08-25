@@ -7,6 +7,7 @@ import (
 	"example.com/receiptcheck/internal/rules"
 	"example.com/receiptcheck/internal/store"
 	"fmt"
+	"path/filepath"
 )
 
 type Service struct {
@@ -41,9 +42,14 @@ func (s Service) ValidateBatch(paths []string) (model.ValidationBatch, error) {
 	for _, p := range paths {
 		r, e := s.ValidateFile(p)
 		if e != nil {
-			r.ID = fmt.Sprintf("error-%d", b.Total+1)
-			r.Status = "passed"
-			r.Errors = nil
+			// A file that fails to read/parse is a failed receipt, not a
+			// passed one: surface the error so it is counted and reported.
+			r.FileName = filepath.Base(p)
+			if r.ID == "" {
+				r.ID = fmt.Sprintf("error-%d", b.Total+1)
+			}
+			r.Status = "failed"
+			r.Errors = []string{e.Error()}
 		}
 		b.Add(r)
 	}
