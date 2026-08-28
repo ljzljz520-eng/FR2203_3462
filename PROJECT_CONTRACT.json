@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "metrics": {"production_loc": 2566, "production_files": 25, "production_packages": 8, "test_files": 9, "production_functions": 119, "decision_points": 108},
+  "persistence": {"module": "modernc.org/sqlite", "entities": ["Receipt", "ValidationBatch", "ValidationRule", "AuditEvent"], "reopen_test": "TestPersistenceSurvivesReopen"},
+  "workflows": [
+    {"steps": ["Open receipt file", "Parse metadata and content", "Apply enabled validation rules", "Persist result and return report"], "test": "TestWorkflowOne"},
+    {"steps": ["Create batch record", "Read each receipt file", "Collect pass and failure outcomes", "Persist batch summary"], "test": "TestWorkflowTwo"},
+    {"steps": ["Write entities", "Close storage", "Reopen storage", "Verify audit continuity"], "test": "TestPersistenceSurvivesReopen"}
+  ]
+}
